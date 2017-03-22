@@ -5,27 +5,34 @@ from ipyparallel import Client
 
 import cfsr
 
+# !!! WARNING !!!
+# It appears that starting with pygrib 1.9.8, the order of the returned
+# grib data has changed, this is fixed in cfsr.py by using data[::-1,:]
+# (could have also removed the lats[::-1,0] reorientation, but this would
+# break the continuity with previously generated files)
+# This code is now only valid for pygrib >1.9.8
+
 # For new variables, need to edit the info in cfsr.py
 
-path_data = '/scen3/stdenis/projects/climate_datasets/cfs2'
+path_data = '/scen3/stdenis/projects/climate_datasets/cfs2/grb_files'
 path_output = '/scen3/stdenis/projects/climate_datasets/cfs2/nc_files'
 grib_source = 'rda' # Should be 'rda' or 'nomads'
-var_name = 'q2m' # This is the name of the variable in the filename.
-grib_var_name = 'Specific humidity' # This is the name in the grib file, can use
+var_name = 'dlwsfc' # This is the name of the variable in the filename.
+grib_var_name = 'Downward long-wave radiation flux' # This is the name in the grib file, can use
                            # gribou.all_str_dump(grib_file) to find it.
-grib_level = 2 # If there is no units in the str dump, set to None.
+grib_level = None # If there is no units in the str dump, set to None.
                   # Otherwise this should be the number before the units.
-nc_var_name = 'huss' # If it is not clear what this is in the CF convention
+nc_var_name = 'rlds' # If it is not clear what this is in the CF convention
                          # table, or the units don't match, use the CFSR name.
-nc_units = '1' # Also available from gribou.all_str_dump(grib_file)
+nc_units = 'W m-2' # Also available from gribou.all_str_dump(grib_file)
 nc_format = 'NETCDF4_CLASSIC'
 resolution = 'highres' # 'highres' or 'lowres' or 'prmslmidres' or
                        # 'ocnmidres' or 'ocnlowres'. This is determined
                        # by the selection of the grid when obtaining the
                        # files.
-initial_year = 2015 # Usually 1979, sometimes the parallel code does not
+initial_year = 2016 # Usually 1979, sometimes the parallel code does not
                     # complete the later files, rerun with final years.
-final_year = 2015 # Usually 2010, some ocean files end in 2009.
+final_year = 2016 # Usually 2010, some ocean files end in 2009.
 cache_size = 100
 
 rc = Client()

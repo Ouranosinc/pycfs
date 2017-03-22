@@ -369,7 +369,7 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
         if i not in list_of_i:
             continue
         try:
-            data = grb_msg['values']
+            data = grb_msg['values'][::-1,:]
         except RuntimeError:
             data = ma.masked_all([var1.shape[1],var1.shape[2]])
             flag_runtimeerror = True
@@ -544,7 +544,7 @@ def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
     var1.long_name = cfsr_var.name
     var1.standard_name = standard_names[nc_var_name]
     var1.statistic = cfsr_var.statistic
-    var1[:,:] = gribou.get_msg_data(grib_file,i+1)
+    var1[:,:] = gribou.get_msg_data(grib_file,i+1)[::-1,:]
 
     nc1.close()
 
