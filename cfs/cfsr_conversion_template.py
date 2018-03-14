@@ -1,3 +1,11 @@
+"""CFSR & CVSv2 conversion
+
+This requires a running UPCluster:
+
+    $ ipcluster start -n 12
+
+"""
+
 import os
 from ipyparallel import Client
 
@@ -24,6 +32,10 @@ months = ['01', '02', '03', '04', '05', '06',
 
 grib_source = 'rda'
 resolution = 'highres'
+"""This is related to the grid choice on the rda portal. Generally, if
+the higher resolution is selected, set to 'highres'. For lower resolutions,
+the file names should have a *.l.gdas.* structure, in this case set to
+'lowres'"""
 cache_size = 100
 
 rc = Client()
