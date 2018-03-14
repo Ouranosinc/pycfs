@@ -5,12 +5,17 @@ import cfsr
 
 path_input = '/some/path'
 path_output = '/some/path'
-path_pycfs = '/some/path'
+path_pycfs = '/some/path'  # The path to cfsr.py and gribou.py
 var_names = ['pressfc']  # The RDA archive cfsr dataset prefix
 grib_var_names = ['Surface pressure']
+"""The grib_var_names can be obtained from gribou.all_str_dump(file_name)"""
 grib_levels = [None]
+"""The grib levels are set to None if there are no vertical level units
+in the groubou.all_str_dump(file_name), otherwise the number is used
+(e.g. grib_levels = [2] for one 2 meter variable)"""
 nc_var_names = ['ps']
 nc_units = ['Pa']
+"""nc_var_names can also be obtained in the gribou.all_str_dump(file_name)"""
 nc_format = 'NETCDF4_CLASSIC'
 initial_year = 1979
 final_year = 2010
