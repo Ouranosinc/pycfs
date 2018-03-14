@@ -7,6 +7,8 @@ import ouranos.formats.netcdf as nc
 from ouranos.utils.timely import CalGregorian
 import gribou
 
+from cfsr_defaults import standard_names, variable_keys
+
 # Step 1: gribou.all_str_dump(grib_file) of a sample file.
 
 # Orography example :
@@ -25,52 +27,6 @@ import gribou
 
 # Note that when analysis is not present, the first timestep in an hourly file
 # is at 1h, the last time step is at 0h on the first day of the next month.
-
-standard_names = {'catsn':'categorical_snow_table_4.222', # force units to N/A,
-                  'clt':'cloud_area_fraction', # force units to 1, fix below.
-                  'depthBelowSea':'depth',
-                  'dewpt':'dew_point_temperature',
-                  'gflux':'ground_heat_flux',
-                  'heightAboveGround':'height',
-                  'hfls':'surface_upward_latent_heat_flux',
-                  'hurs':'relative_humidity',
-                  'huss':'specific_humidity',
-                  'mrro':'runoff_flux', # force units to kg m-2 s-1
-                  'ocnsal15':'ocean_salinity',
-                  'ocnsal5':'ocean_salinity',
-                  'ocnslh':'sea_surface_height_above_geoid',
-                  'ocnsst5':'sea_water_potential_temperature',
-                  'ocnt15':'sea_water_potential_temperature',
-                  'ocnu15':'eastward_sea_water_velocity',
-                  'ocnu5':'eastward_sea_water_velocity',
-                  'ocnv15':'northward_sea_water_velocity',
-                  'ocnv5':'northward_sea_water_velocity',
-                  'orog':'surface_altitude', # force units to m
-                  'phis':'geopotential_height',
-                  'pr':'precipitation_flux',
-                  'ps':'surface_air_pressure',
-                  'psl':'air_pressure_at_sea_level',
-                  'rlds':'surface_downwelling_longwave_flux_in_air',
-                  'rlus':'surface_upwelling_longwave_flux_in_air',
-                  'rsds':'surface_downwelling_shortwave_flux_in_air',
-                  'rsus':'surface_upwelling_shortwave_flux_in_air',
-                  'sic':'sea_ice_area_fraction', # force units to 1
-                  'sit':'sea_ice_thickness',
-                  'sftlf':'land_area_fraction', # force units to 1
-                  'snw':'surface_snow_amount',
-                  'tas':'air_temperature',
-                  'tasmax':'air_temperature',
-                  'tasmin':'air_temperature',
-                  'ts':'surface_temperature',
-                  'uas':'eastward_wind',
-                  'vas':'northward_wind',}
-
-variable_keys = ['standardDeviation','month','endStep','dataDate','day','year',
-                 'validityTime','codedValues','stepRange','skewness',
-                 'latLonValues','kurtosis','totalLength','forecastTime',
-                 'startStep','values','julianDay','section7Length',
-                 'validityDate','average','minimum','maximum','hour',
-                 'dataTime']
 
 defi2 = netCDF4.default_fillvals['i2']
 defi4 = netCDF4.default_fillvals['i4']
@@ -221,6 +177,11 @@ def filter_var_timesteps(list_of_msg_dicts,grib_var_name,grib_level,
                 if include_analysis:
                     list_of_i.append(j-1)
                     skip_6 = True
+                analysis = 'unknown'
+        elif (msg_dict['startStep'] == 1) and (msg_dict['endStep'] == 1):
+            if analysis == 'candidate':
+                # We are in a typical 0,1,2,3,4,5 timeseries, add the analysis
+                list_of_i.append(j-1)
                 analysis = 'unknown'
         elif analysis == 'candidate':
             # the candidate is not the analysis, reset analysis
