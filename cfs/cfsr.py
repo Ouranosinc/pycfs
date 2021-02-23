@@ -3,8 +3,8 @@ import datetime
 import numpy as np
 import numpy.ma as ma
 import netCDF4
-import ouranos.formats.netcdf as nc
-from ouranos.utils.timely import CalGregorian
+import netcdf as nc
+from timely import CalGregorian
 import gribou
 
 from cfsr_defaults import standard_names, variable_keys
@@ -32,10 +32,11 @@ defi2 = netCDF4.default_fillvals['i2']
 defi4 = netCDF4.default_fillvals['i4']
 deff4 = netCDF4.default_fillvals['f4']
 
+
 class CFSRVariable:
     """CFSR variable definition."""
 
-    def __init__(self,grib_msg_dict):
+    def __init__(self, grib_msg_dict):
         """Initialize CFSR variable.
 
         Parameters
@@ -49,33 +50,33 @@ class CFSRVariable:
             self.grib_msg_dict[key] = grib_msg_dict[key]
         self.name = self.grib_msg_dict['name']
         if self.name != self.grib_msg_dict['parameterName']:
-            msg1 = "Name mismatch between 'name' and 'parameterName': " 
-            msg2 = "%s vs %s" % (self.name,self.grib_msg_dict['parameterName'])
-            #raise NotImplementedError(msg1+msg2)
-            print msg1+msg2
+            msg1 = "Name mismatch between 'name' and 'parameterName': "
+            msg2 = "%s vs %s" % (self.name, self.grib_msg_dict['parameterName'])
+            # raise NotImplementedError(msg1+msg2)
+            print(msg1 + msg2)
         if self.name != self.grib_msg_dict['nameECMF']:
-            msg1 = "Name mismatch between 'name' and 'nameECMF': " 
-            msg2 = "%s vs %s" % (self.name,self.grib_msg_dict['nameECMF'])
-            #raise NotImplementedError(msg1+msg2)
-            print msg1+msg2
-        self.units = self.grib_msg_dict['units'].replace('**','')
-        if self.units != self.grib_msg_dict['parameterUnits'].replace('**',''):
-            msg1 = "Unit mismatch between 'units' and 'parameterUnits': " 
-            warp = (self.units,self.grib_msg_dict['parameterUnits'])
+            msg1 = "Name mismatch between 'name' and 'nameECMF': "
+            msg2 = "%s vs %s" % (self.name, self.grib_msg_dict['nameECMF'])
+            # raise NotImplementedError(msg1+msg2)
+            print(msg1 + msg2)
+        self.units = self.grib_msg_dict['units'].replace('**', '')
+        if self.units != self.grib_msg_dict['parameterUnits'].replace('**', ''):
+            msg1 = "Unit mismatch between 'units' and 'parameterUnits': "
+            warp = (self.units, self.grib_msg_dict['parameterUnits'])
             msg2 = "%s vs %s" % warp
-            #raise NotImplementedError(msg1+msg2)
-            print msg1+msg2
-        if self.units != self.grib_msg_dict['unitsECMF'].replace('**',''):
-            msg1 = "Unit mismatch between 'units' and 'unitsECMF': " 
-            msg2 = "%s vs %s" % (self.units,self.grib_msg_dict['unitsECMF'])
-            #raise NotImplementedError(msg1+msg2)
-            print msg1+msg2
+            # raise NotImplementedError(msg1+msg2)
+            print(msg1 + msg2)
+        if self.units != self.grib_msg_dict['unitsECMF'].replace('**', ''):
+            msg1 = "Unit mismatch between 'units' and 'unitsECMF': "
+            msg2 = "%s vs %s" % (self.units, self.grib_msg_dict['unitsECMF'])
+            # raise NotImplementedError(msg1+msg2)
+            print(msg1 + msg2)
         self.statistic = self.grib_msg_dict['stepType']
         if self.statistic != self.grib_msg_dict['stepTypeInternal']:
-            msg1 = "Stat mismatch between 'stepType' and 'stepTypeInternal': " 
-            warp = (self.statistic,self.grib_msg_dict['stepTypeInternal'])
+            msg1 = "Stat mismatch between 'stepType' and 'stepTypeInternal': "
+            warp = (self.statistic, self.grib_msg_dict['stepTypeInternal'])
             msg2 = "%s vs %s" % warp
-            raise NotImplementedError(msg1+msg2)
+            raise NotImplementedError(msg1 + msg2)
         self.vertical_type = self.grib_msg_dict['typeOfLevel']
         self.vertical_units = self.grib_msg_dict['unitsOfFirstFixedSurface']
         if self.vertical_units == 'unknown':
@@ -84,16 +85,16 @@ class CFSRVariable:
         else:
             warp1 = self.grib_msg_dict['scaleFactorOfFirstFixedSurface']
             warp2 = self.grib_msg_dict['scaledValueOfFirstFixedSurface']
-            level1 = warp2/float(10**warp1)
+            level1 = warp2 / float(10 ** warp1)
             if self.grib_msg_dict['unitsOfSecondFixedSurface'] == 'unknown':
                 self.level = level1
             else:
                 warp1 = self.grib_msg_dict['scaleFactorOfSecondFixedSurface']
                 warp2 = self.grib_msg_dict['scaledValueOfSecondFixedSurface']
-                level2 = warp2/float(10**warp1)
-                self.level = (level1,level2)
+                level2 = warp2 / float(10 ** warp1)
+                self.level = (level1, level2)
 
-    def __eq__(self,other):
+    def __eq__(self, other):
         for key in self.grib_msg_dict.keys():
             if key not in other.grib_msg_dict.keys():
                 return False
@@ -109,13 +110,14 @@ class CFSRVariable:
             if key not in self.grib_msg_dict.keys():
                 return False
 
-    def __ne__(self,other):
+    def __ne__(self, other):
         if self.__eq__(other):
             return False
         else:
             return True
 
-def optimal_chunksizes(nt,nlat,nlon):
+
+def optimal_chunksizes(nt, nlat, nlon):
     """Optimal chunksizes for hourly data in a monthly file.
 
     Parameters
@@ -135,11 +137,12 @@ def optimal_chunksizes(nt,nlat,nlon):
 
     """
 
-    clon = np.sqrt(1000000.0*nlon/(nlat*nt))
-    clat = nlat*clon/nlon
-    return (nt,int(np.ceil(clat)),int(np.ceil(clon)))
+    clon = np.sqrt(1000000.0 * nlon / (nlat * nt))
+    clat = nlat * clon / nlon
+    return (nt, int(np.ceil(clat)), int(np.ceil(clon)))
 
-def filter_var_timesteps(list_of_msg_dicts,grib_var_name,grib_level,
+
+def filter_var_timesteps(list_of_msg_dicts, grib_var_name, grib_level,
                          include_analysis=True):
     """Find message ids that will create a timeserie for a given variable.
 
@@ -161,7 +164,7 @@ def filter_var_timesteps(list_of_msg_dicts,grib_var_name,grib_level,
     list_of_i = []
     analysis = 'unknown'
     skip_6 = False
-    for j,msg_dict in enumerate(list_of_msg_dicts):
+    for j, msg_dict in enumerate(list_of_msg_dicts):
         cfsr_var = CFSRVariable(msg_dict)
         if cfsr_var.name != grib_var_name:
             continue
@@ -175,13 +178,13 @@ def filter_var_timesteps(list_of_msg_dicts,grib_var_name,grib_level,
                 # all is well, we have the 3min spinup afterward, which we
                 # ignore. Reset analysis to unknown.
                 if include_analysis:
-                    list_of_i.append(j-1)
+                    list_of_i.append(j - 1)
                     skip_6 = True
                 analysis = 'unknown'
         elif (msg_dict['startStep'] == 1) and (msg_dict['endStep'] == 1):
             if analysis == 'candidate':
                 # We are in a typical 0,1,2,3,4,5 timeseries, add the analysis
-                list_of_i.append(j-1)
+                list_of_i.append(j - 1)
                 analysis = 'unknown'
         elif analysis == 'candidate':
             # the candidate is not the analysis, reset analysis
@@ -191,11 +194,12 @@ def filter_var_timesteps(list_of_msg_dicts,grib_var_name,grib_level,
                 list_of_i.append(j)
         elif (msg_dict['startStep'] != 0) or (msg_dict['endStep'] != 0):
             list_of_i.append(j)
-    return list_of_i,skip_6
+    return list_of_i, skip_6
 
-def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
-                           grib_var_name,grib_level,cache_size=100,
-                           initial_year=1979,overwrite_nc_units=None,
+
+def hourly_grib2_to_netcdf(grib_file, grib_source, nc_file, nc_var_name,
+                           grib_var_name, grib_level, cache_size=100,
+                           initial_year=1979, overwrite_nc_units=None,
                            include_analysis=True,
                            nc_format='NETCDF4'):
     """Convert hourly data from GRIB file containing one month to NetCDF.
@@ -222,16 +226,16 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
     """
 
     list_of_msg_dicts = gribou.get_all_msg_dict(grib_file)
-    list_of_i,analysis_present = filter_var_timesteps(list_of_msg_dicts,
-                                                      grib_var_name,
-                                                      grib_level,
-                                                      include_analysis)
+    list_of_i, analysis_present = filter_var_timesteps(list_of_msg_dicts,
+                                                       grib_var_name,
+                                                       grib_level,
+                                                       include_analysis)
     cfsr_var = CFSRVariable(list_of_msg_dicts[list_of_i[0]])
-    lats,lons = gribou.get_latlons(grib_file,list_of_i[0]+1)
+    lats, lons = gribou.get_latlons(grib_file, list_of_i[0] + 1)
 
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    nc1 = netCDF4.Dataset(nc_file,'w',format=nc_format)
-    
+    nc1 = netCDF4.Dataset(nc_file, 'w', format=nc_format)
+
     nc1.Conventions = 'CF-1.5'
     nc1.title = 'Climate System Forecast Reanalysis'
     nc1.history = "%s: Convert from grib2 to NetCDF" % (now,)
@@ -241,21 +245,21 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
     if analysis_present:
         msg1 = "Obtained from %s server, " % (grib_source,)
         msg2 = "analysis is included, 6h forecast removed."
-        nc1.comment = msg1+msg2
+        nc1.comment = msg1 + msg2
     else:
         msg1 = "Obtained from %s server, " % (grib_source,)
         msg2 = "no analysis, 6h forecast is included."
-        nc1.comment = msg1+msg2
+        nc1.comment = msg1 + msg2
     nc1.redistribution = "Free to redistribute."
-    
-    nc1.createDimension('time',None)
-    nc1.createDimension('timecomp',6)
-    nc1.createDimension('lat',lats.shape[0])
-    nc1.createDimension('lon',lats.shape[1])
-    
-    nc1.createVariable('timecomp','i2',('timecomp',),zlib=True,fill_value=defi2)
-    
-    time = nc1.createVariable('time','i4',('time',),zlib=True)
+
+    nc1.createDimension('time', None)
+    nc1.createDimension('timecomp', 6)
+    nc1.createDimension('lat', lats.shape[0])
+    nc1.createDimension('lon', lats.shape[1])
+
+    nc1.createVariable('timecomp', 'i2', ('timecomp',), zlib=True, fill_value=defi2)
+
+    time = nc1.createVariable('time', 'i4', ('time',), zlib=True)
     time.axis = 'T'
     if initial_year is None:
         warp = (str(cfsr_var.grib_msg_dict['year']),)
@@ -265,20 +269,20 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
     time.long_name = 'time'
     time.standard_name = 'time'
     time.calendar = 'gregorian'
-    
-    time_vectors = nc1.createVariable('time_vectors','i2',('time','timecomp'),
+
+    time_vectors = nc1.createVariable('time_vectors', 'i2', ('time', 'timecomp'),
                                       zlib=True)
-    
+
     vtype = cfsr_var.vertical_type
-    if vtype in ['depthBelowSea','heightAboveGround']:
+    if vtype in ['depthBelowSea', 'heightAboveGround']:
         try:
             dummy = len(cfsr_var.level)
             bounds = True
         except:
             bounds = False
         else:
-            nc1.createDimension('nv',2)
-        level = nc1.createVariable('level','f4',(),zlib=True)
+            nc1.createDimension('nv', 2)
+        level = nc1.createVariable('level', 'f4', (), zlib=True)
         level.axis = 'Z'
         level.units = cfsr_var.vertical_units
         if vtype == 'depthBelowSea':
@@ -289,30 +293,30 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
         level.standard_name = standard_names[vtype]
         if bounds:
             level.bounds = 'level_bnds'
-            level_bnds = nc1.createVariable('level_bnds','f4',('nv',),zlib=True)
+            level_bnds = nc1.createVariable('level_bnds', 'f4', ('nv',), zlib=True)
             level_bnds[0] = cfsr_var.level[0]
             level_bnds[1] = cfsr_var.level[1]
-            level[:] = (level_bnds[0]+level_bnds[1])/2.0
+            level[:] = (level_bnds[0] + level_bnds[1]) / 2.0
         else:
             level[:] = cfsr_var.level
-    
-    lat = nc1.createVariable('lat','f4',('lat'),zlib=True)
+
+    lat = nc1.createVariable('lat', 'f4', ('lat'), zlib=True)
     lat.axis = 'Y'
     lat.units = 'degrees_north'
     lat.long_name = 'latitude'
     lat.standard_name = 'latitude'
-    lat[:] = lats[::-1,0]
-    
-    lon = nc1.createVariable('lon','f4',('lon'),zlib=True)
+    lat[:] = lats[::-1, 0]
+
+    lon = nc1.createVariable('lon', 'f4', ('lon'), zlib=True)
     lon.axis = 'X'
     lon.units = 'degrees_east'
     lon.long_name = 'longitude'
     lon.standard_name = 'longitude'
-    lon[:] = lons[0,:]
+    lon[:] = lons[0, :]
 
-    warp = optimal_chunksizes(len(list_of_i),lat.size,lon.size)
-    var1 = nc1.createVariable(nc_var_name,'f4',('time','lat','lon'),zlib=True,
-                              fill_value=deff4,chunksizes=warp)
+    warp = optimal_chunksizes(len(list_of_i), lat.size, lon.size)
+    var1 = nc1.createVariable(nc_var_name, 'f4', ('time', 'lat', 'lon'), zlib=True,
+                              fill_value=deff4, chunksizes=warp)
     if overwrite_nc_units is None:
         var1.units = cfsr_var.units
     else:
@@ -320,89 +324,90 @@ def hourly_grib2_to_netcdf(grib_file,grib_source,nc_file,nc_var_name,
     var1.long_name = cfsr_var.name
     var1.standard_name = standard_names[nc_var_name]
     var1.statistic = cfsr_var.statistic
-    
-    t = 0 # counter for the NetCDF file
-    c = 0 # counter for our temporary array
-    temporary_array = ma.zeros([cache_size,var1.shape[1],var1.shape[2]])
-    temporary_tvs = np.zeros([cache_size,6])
+
+    t = 0  # counter for the NetCDF file
+    c = 0  # counter for our temporary array
+    temporary_array = ma.zeros([cache_size, var1.shape[1], var1.shape[2]])
+    temporary_tvs = np.zeros([cache_size, 6])
     flag_runtimeerror = False
-    for i,grb_msg in enumerate(gribou.msg_iterator(grib_file)):
+    for i, grb_msg in enumerate(gribou.msg_iterator(grib_file)):
         if i not in list_of_i:
             continue
         try:
-            data = grb_msg['values'][::-1,:]
+            data = grb_msg['values'][::-1, :]
         except RuntimeError:
-            data = ma.masked_all([var1.shape[1],var1.shape[2]])
+            data = ma.masked_all([var1.shape[1], var1.shape[2]])
             flag_runtimeerror = True
-        dt = list_of_msg_dicts[i]['endStep']-list_of_msg_dicts[i]['startStep']
+        dt = list_of_msg_dicts[i]['endStep'] - list_of_msg_dicts[i]['startStep']
         if cfsr_var.statistic == 'avg':
             if dt == 1:
-                temporary_array[c,:,:] = data
+                temporary_array[c, :, :] = data
             else:
                 if list_of_msg_dicts[i]['startStep'] != 0:
                     raise NotImplementedError("Weird delta t?")
                 x = list_of_msg_dicts[i]['endStep']
-                temporary_array[c,:,:] = x*data-(x-1)*previous_data
+                temporary_array[c, :, :] = x * data - (x - 1) * previous_data
         elif cfsr_var.statistic == 'accum':
             if dt == 1:
-                temporary_array[c,:,:] = data/3600.0
+                temporary_array[c, :, :] = data / 3600.0
             else:
                 if list_of_msg_dicts[i]['startStep'] != 0:
                     raise NotImplementedError("Weird delta t?")
-                temporary_array[c,:,:] = (data-previous_data)/3600.0
+                temporary_array[c, :, :] = (data - previous_data) / 3600.0
         else:
-            temporary_array[c,:,:] = data
-        temporary_tvs[c,0] = list_of_msg_dicts[i]['year']
-        temporary_tvs[c,1] = list_of_msg_dicts[i]['month']
-        temporary_tvs[c,2] = list_of_msg_dicts[i]['day']
-        warp = list_of_msg_dicts[i]['hour']+list_of_msg_dicts[i]['endStep']
-        temporary_tvs[c,3] = warp
-        if temporary_tvs[c,3] == 24:
-            temporary_tvs[c,3] = 0
-            warp = CalGregorian.count_days_in_cycle(temporary_tvs[c,1],
-                                                    temporary_tvs[c,0])
-            if temporary_tvs[c,2] == warp:
-                temporary_tvs[c,2] = 1
-                if temporary_tvs[c,1] == 12:
-                    temporary_tvs[c,1] = 1
-                    temporary_tvs[c,0] = temporary_tvs[c,0]+1
+            temporary_array[c, :, :] = data
+        temporary_tvs[c, 0] = list_of_msg_dicts[i]['year']
+        temporary_tvs[c, 1] = list_of_msg_dicts[i]['month']
+        temporary_tvs[c, 2] = list_of_msg_dicts[i]['day']
+        warp = list_of_msg_dicts[i]['hour'] + list_of_msg_dicts[i]['endStep']
+        temporary_tvs[c, 3] = warp
+        if temporary_tvs[c, 3] == 24:
+            temporary_tvs[c, 3] = 0
+            warp = CalGregorian.count_days_in_cycle(temporary_tvs[c, 1],
+                                                    temporary_tvs[c, 0])
+            if temporary_tvs[c, 2] == warp:
+                temporary_tvs[c, 2] = 1
+                if temporary_tvs[c, 1] == 12:
+                    temporary_tvs[c, 1] = 1
+                    temporary_tvs[c, 0] = temporary_tvs[c, 0] + 1
                 else:
-                    temporary_tvs[c,1] = temporary_tvs[c,1]+1
+                    temporary_tvs[c, 1] = temporary_tvs[c, 1] + 1
             else:
-                temporary_tvs[c,2] = temporary_tvs[c,2]+1
-        temporary_tvs[c,4] = 0
-        temporary_tvs[c,5] = 0
+                temporary_tvs[c, 2] = temporary_tvs[c, 2] + 1
+        temporary_tvs[c, 4] = 0
+        temporary_tvs[c, 5] = 0
         c += 1
         if c == cache_size:
             c = 0
             if nc_var_name == 'clt':
-                var1[t:t+cache_size,:,:] = temporary_array/100.0
+                var1[t:t + cache_size, :, :] = temporary_array / 100.0
             else:
-                var1[t:t+cache_size,:,:] = temporary_array
-            time_vectors[t:t+cache_size,:] = temporary_tvs
+                var1[t:t + cache_size, :, :] = temporary_array
+            time_vectors[t:t + cache_size, :] = temporary_tvs
             t += cache_size
         previous_data = data
     if nc_var_name == 'clt':
-        var1[t:t+c,:,:] = temporary_array[0:c,:,:]/100.0
+        var1[t:t + c, :, :] = temporary_array[0:c, :, :] / 100.0
     else:
-        var1[t:t+c,:,:] = temporary_array[0:c,:,:]
-    time_vectors[t:t+c,:] = temporary_tvs[0:c,:]
-    
-    datetimes,masked,valid = nc._time_vectors_to_datetimes(time_vectors[:,:])
-    num1 = netCDF4.date2num(datetimes,time.units,time.calendar)
-    if time.dtype in [np.int8,np.int16,np.int32,np.int64]:
-        time[valid] = np.array(np.round(num1),dtype=time.dtype)
+        var1[t:t + c, :, :] = temporary_array[0:c, :, :]
+    time_vectors[t:t + c, :] = temporary_tvs[0:c, :]
+
+    datetimes, masked, valid = nc._time_vectors_to_datetimes(time_vectors[:, :])
+    num1 = netCDF4.date2num(datetimes, time.units, time.calendar)
+    if time.dtype in [np.int8, np.int16, np.int32, np.int64]:
+        time[valid] = np.array(np.round(num1), dtype=time.dtype)
     else:
         time[valid] = num1
     if len(masked): time[masked] = ma.masked_all([len(masked)])
-    
+
     if flag_runtimeerror:
         nc1.warnings = "RuntimeError encountered, missing values inserted."
     nc1.close()
 
-def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
-                          grib_var_name=None,grib_level=None,
-                          overwrite_nc_units=None,nc_format='NETCDF4'):
+
+def fixed_grib2_to_netcdf(grib_file, nc_file, nc_var_name, msg_id=None,
+                          grib_var_name=None, grib_level=None,
+                          overwrite_nc_units=None, nc_format='NETCDF4'):
     """Convert a single spatial field from a GRIB file to NetCDF.
 
     Parameters
@@ -423,11 +428,11 @@ def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
     """
 
     if msg_id is not None:
-        i = msg_id-1
+        i = msg_id - 1
     else:
         list_of_msg_dicts = gribou.get_all_msg_dict(grib_file)
         flag_found = False
-        for j,msg_dict in enumerate(list_of_msg_dicts):
+        for j, msg_dict in enumerate(list_of_msg_dicts):
             cfsr_var = CFSRVariable(msg_dict)
             if cfsr_var.name != grib_var_name:
                 continue
@@ -438,33 +443,33 @@ def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
             i = j
             flag_found = True
     cfsr_var = CFSRVariable(list_of_msg_dicts[i])
-    lats,lons = gribou.get_latlons(grib_file,i+1)
-    
+    lats, lons = gribou.get_latlons(grib_file, i + 1)
+
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    nc1 = netCDF4.Dataset(nc_file,'w',format=nc_format)
-    
+    nc1 = netCDF4.Dataset(nc_file, 'w', format=nc_format)
+
     nc1.Conventions = 'CF-1.5'
     nc1.title = 'Climate System Forecast Reanalysis'
     nc1.history = "%s: Convert from grib2 to NetCDF" % (now,)
     nc1.institution = 'NCEP'
     nc1.source = 'Reanalysis'
     nc1.references = 'http://cfs.ncep.noaa.gov/cfsr/'
-    #nc1.comment = ''
+    # nc1.comment = ''
     nc1.redistribution = "Free to redistribute."
 
-    nc1.createDimension('lat',lats.shape[0])
-    nc1.createDimension('lon',lats.shape[1])
+    nc1.createDimension('lat', lats.shape[0])
+    nc1.createDimension('lon', lats.shape[1])
 
     vtype = cfsr_var.vertical_type
-    if vtype in ['depthBelowSea','heightAboveGround']:
+    if vtype in ['depthBelowSea', 'heightAboveGround']:
         try:
             dummy = len(cfsr_var.level)
             bounds = True
         except:
             bounds = False
         else:
-            nc1.createDimension('nv',2)
-        level = nc1.createVariable('level','f4',(),zlib=True)
+            nc1.createDimension('nv', 2)
+        level = nc1.createVariable('level', 'f4', (), zlib=True)
         level.axis = 'Z'
         level.units = cfsr_var.vertical_units
         if vtype == 'depthBelowSea':
@@ -475,28 +480,28 @@ def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
         level.standard_name = standard_names[vtype]
         if bounds:
             level.bounds = 'level_bnds'
-            level_bnds = nc1.createVariable('level_bnds','f4',('nv',),zlib=True)
+            level_bnds = nc1.createVariable('level_bnds', 'f4', ('nv',), zlib=True)
             level_bnds[0] = cfsr_var.level[0]
             level_bnds[1] = cfsr_var.level[1]
-            level[:] = (level_bnds[0]+level_bnds[1])/2.0
+            level[:] = (level_bnds[0] + level_bnds[1]) / 2.0
         else:
             level[:] = cfsr_var.level
-    
-    lat = nc1.createVariable('lat','f4',('lat'),zlib=True)
+
+    lat = nc1.createVariable('lat', 'f4', ('lat'), zlib=True)
     lat.axis = 'Y'
     lat.units = 'degrees_north'
     lat.long_name = 'latitude'
     lat.standard_name = 'latitude'
-    lat[:] = lats[::-1,0]
-    
-    lon = nc1.createVariable('lon','f4',('lon'),zlib=True)
+    lat[:] = lats[::-1, 0]
+
+    lon = nc1.createVariable('lon', 'f4', ('lon'), zlib=True)
     lon.axis = 'X'
     lon.units = 'degrees_east'
     lon.long_name = 'longitude'
     lon.standard_name = 'longitude'
-    lon[:] = lons[0,:]
-    
-    var1 = nc1.createVariable(nc_var_name,'f4',('lat','lon'),zlib=True,
+    lon[:] = lons[0, :]
+
+    var1 = nc1.createVariable(nc_var_name, 'f4', ('lat', 'lon'), zlib=True,
                               fill_value=deff4)
     if overwrite_nc_units is None:
         var1.units = cfsr_var.units
@@ -505,7 +510,6 @@ def fixed_grib2_to_netcdf(grib_file,nc_file,nc_var_name,msg_id=None,
     var1.long_name = cfsr_var.name
     var1.standard_name = standard_names[nc_var_name]
     var1.statistic = cfsr_var.statistic
-    var1[:,:] = gribou.get_msg_data(grib_file,i+1)[::-1,:]
+    var1[:, :] = gribou.get_msg_data(grib_file, i + 1)[::-1, :]
 
     nc1.close()
-
