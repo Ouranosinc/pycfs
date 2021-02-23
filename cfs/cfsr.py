@@ -4,10 +4,10 @@ import numpy as np
 import numpy.ma as ma
 import netCDF4
 import netcdf as nc
-from .timely import CalGregorian
-from . import gribou
+from timely import CalGregorian
+import gribou
 
-from .cfsr_defaults import standard_names, variable_keys
+from cfsr_defaults import standard_names, variable_keys
 
 # Step 1: gribou.all_str_dump(grib_file) of a sample file.
 

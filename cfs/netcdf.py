@@ -44,7 +44,7 @@ import netCDF4
 import numpy as np
 import numpy.ma as ma
 
-from . import timely as ty
+import timely as ty
 
 # from . import ncgeo as geo
 default_calendar = ty.CalGregorian
