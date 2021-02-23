@@ -38,12 +38,13 @@ FULL REVIEW REQUIRED
 
 import datetime
 import warnings
+import copy
 
 import netCDF4
 import numpy as np
 import numpy.ma as ma
 
-import timely as ty
+from . import timely as ty
 
 # from . import ncgeo as geo
 default_calendar = ty.CalGregorian
